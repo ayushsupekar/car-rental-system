@@ -37,5 +37,9 @@ public class CarResponse {
     // All images for detail page
     private List<CarImageResponse> images;
 
+    // Rating summary — populated from reviews
+    private Double averageRating;
+    private Long totalReviews;
+
     private LocalDateTime createdAt;
 }
