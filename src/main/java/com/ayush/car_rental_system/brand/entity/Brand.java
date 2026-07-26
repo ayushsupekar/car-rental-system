@@ -1,3 +1,4 @@
+
 package com.ayush.car_rental_system.brand.entity;
 
 import com.ayush.car_rental_system.common.entity.BaseEntity;
