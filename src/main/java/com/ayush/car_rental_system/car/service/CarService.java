@@ -11,6 +11,7 @@ import com.ayush.car_rental_system.category.entity.Category;
 import com.ayush.car_rental_system.category.repository.CategoryRepository;
 import com.ayush.car_rental_system.common.exception.DuplicateResourceException;
 import com.ayush.car_rental_system.common.exception.ResourceNotFoundException;
+import com.ayush.car_rental_system.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class CarService {
     private final CarRepository carRepository;
     private final BrandRepository brandRepository;
     private final CategoryRepository categoryRepository;
+    private final ReviewRepository reviewRepository;
 
     // ===== PUBLIC =====
 
@@ -168,6 +170,10 @@ public class CarService {
                 .categoryName(car.getCategory().getName())
                 .primaryImageUrl(primaryImageUrl)
                 .images(images)
+                .averageRating(reviewRepository.findAverageRatingByCarId(car.getId()) != null
+                        ? Math.round(reviewRepository.findAverageRatingByCarId(car.getId()) * 10.0) / 10.0
+                        : 0.0)
+                .totalReviews(reviewRepository.countByCarId(car.getId()))
                 .createdAt(car.getCreatedAt())
                 .build();
     }
