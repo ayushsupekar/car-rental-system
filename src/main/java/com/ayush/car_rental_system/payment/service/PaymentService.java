@@ -4,6 +4,7 @@ import com.ayush.car_rental_system.booking.entity.Booking;
 import com.ayush.car_rental_system.booking.repository.BookingRepository;
 import com.ayush.car_rental_system.common.exception.DuplicateResourceException;
 import com.ayush.car_rental_system.common.exception.ResourceNotFoundException;
+import com.ayush.car_rental_system.notification.service.EmailService;
 import com.ayush.car_rental_system.payment.dto.PaymentRequest;
 import com.ayush.car_rental_system.payment.dto.PaymentResponse;
 import com.ayush.car_rental_system.payment.entity.Payment;
@@ -28,24 +29,20 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional
     public PaymentResponse initiatePayment(String userEmail, PaymentRequest request) {
         Booking booking = findBookingOrThrow(request.getBookingId());
 
-        // Verify the booking belongs to the requesting user
         if (!booking.getUser().getEmail().equals(userEmail)) {
             throw new IllegalStateException("You are not authorized to pay for this booking");
         }
-
-        // Only PENDING bookings can be paid
         if (booking.getStatus() != Booking.BookingStatus.PENDING) {
             throw new IllegalStateException(
-                    "Payment can only be initiated for PENDING bookings. Current status: "
+                    "Payment can only be initiated for PENDING bookings. Current: "
                             + booking.getStatus());
         }
-
-        // Prevent duplicate payment records
         if (paymentRepository.existsByBookingId(booking.getId())) {
             throw new DuplicateResourceException(
                     "A payment already exists for booking: " + booking.getId());
@@ -63,8 +60,6 @@ public class PaymentService {
         return toResponse(saved);
     }
 
-    // Simulates gateway success callback — in production this is called by
-    // Razorpay/Stripe webhook with a real transactionId
     @Transactional
     public PaymentResponse confirmPayment(Long paymentId, String transactionId) {
         Payment payment = findPaymentOrThrow(paymentId);
@@ -75,18 +70,18 @@ public class PaymentService {
         }
 
         payment.setStatus(Payment.PaymentStatus.SUCCESS);
-        // In production: use the transactionId from the gateway webhook
         payment.setTransactionId(transactionId != null ? transactionId
                 : "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         payment.setPaidAt(LocalDateTime.now());
 
-        // Confirm the booking automatically on successful payment
         Booking booking = payment.getBooking();
         booking.setStatus(Booking.BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
 
-        log.info("Payment {} confirmed for booking {}", payment.getId(), booking.getId());
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        emailService.sendPaymentSuccess(saved);
+        log.info("Payment {} confirmed for booking {}", saved.getId(), booking.getId());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -94,14 +89,10 @@ public class PaymentService {
         Payment payment = findPaymentOrThrow(paymentId);
 
         if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
-            throw new IllegalStateException(
-                    "Only PENDING payments can be marked as failed");
+            throw new IllegalStateException("Only PENDING payments can be marked as failed");
         }
 
         payment.setStatus(Payment.PaymentStatus.FAILED);
-
-        // Failed payment frees the car back up and keeps booking PENDING
-        // User can retry payment
         log.warn("Payment {} failed for booking {}", payment.getId(),
                 payment.getBooking().getId());
         return toResponse(paymentRepository.save(payment));
@@ -112,27 +103,23 @@ public class PaymentService {
         Payment payment = findPaymentOrThrow(paymentId);
 
         if (payment.getStatus() != Payment.PaymentStatus.SUCCESS) {
-            throw new IllegalStateException(
-                    "Only successful payments can be refunded");
+            throw new IllegalStateException("Only successful payments can be refunded");
         }
 
         payment.setStatus(Payment.PaymentStatus.REFUNDED);
-
         log.info("Payment {} refunded for booking {}", payment.getId(),
                 payment.getBooking().getId());
         return toResponse(paymentRepository.save(payment));
     }
 
-    // ===== READ OPERATIONS =====
+    // ===== READ =====
 
     @Transactional(readOnly = true)
     public PaymentResponse getPaymentByBookingId(String userEmail, Long bookingId) {
         Booking booking = findBookingOrThrow(bookingId);
-
         if (!booking.getUser().getEmail().equals(userEmail)) {
             throw new IllegalStateException("You are not authorized to view this payment");
         }
-
         Payment payment = paymentRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No payment found for booking: " + bookingId));
@@ -146,8 +133,6 @@ public class PaymentService {
         return paymentRepository.findAllByBookingUserId(user.getId(), pageable)
                 .map(this::toResponse);
     }
-
-    // ===== ADMIN =====
 
     @Transactional(readOnly = true)
     public Page<PaymentResponse> getAllPayments(Pageable pageable) {

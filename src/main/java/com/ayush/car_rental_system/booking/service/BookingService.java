@@ -9,6 +9,7 @@ import com.ayush.car_rental_system.car.entity.Car;
 import com.ayush.car_rental_system.car.entity.CarImage;
 import com.ayush.car_rental_system.car.repository.CarRepository;
 import com.ayush.car_rental_system.common.exception.ResourceNotFoundException;
+import com.ayush.car_rental_system.notification.service.EmailService;
 import com.ayush.car_rental_system.user.entity.User;
 import com.ayush.car_rental_system.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,8 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final CarRepository carRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    // Only these statuses can be cancelled
     private static final EnumSet<Booking.BookingStatus> CANCELLABLE_STATUSES =
             EnumSet.of(Booking.BookingStatus.PENDING, Booking.BookingStatus.CONFIRMED);
 
@@ -49,24 +50,20 @@ public class BookingService {
 
         if (bookingRepository.existsOverlappingBooking(
                 car.getId(), request.getStartDate(), request.getEndDate())) {
-            throw new IllegalStateException(
-                    "Car is already booked for the selected dates");
+            throw new IllegalStateException("Car is already booked for the selected dates");
         }
 
         long totalDays = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
-        BigDecimal totalPrice = car.getPricePerDay()
-                .multiply(BigDecimal.valueOf(totalDays));
+        BigDecimal totalPrice = car.getPricePerDay().multiply(BigDecimal.valueOf(totalDays));
 
         Booking booking = Booking.builder()
-                .user(user)
-                .car(car)
+                .user(user).car(car)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .totalPrice(totalPrice)
                 .status(Booking.BookingStatus.PENDING)
                 .build();
 
-        // Mark car unavailable immediately to prevent race conditions
         car.setAvailable(false);
         carRepository.save(car);
 
@@ -76,8 +73,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public Page<BookingResponse> getMyBookings(String userEmail, Pageable pageable) {
         User user = findUserOrThrow(userEmail);
-        return bookingRepository.findAllByUserId(user.getId(), pageable)
-                .map(this::toResponse);
+        return bookingRepository.findAllByUserId(user.getId(), pageable).map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -104,12 +100,12 @@ public class BookingService {
 
         booking.setStatus(Booking.BookingStatus.CANCELLED);
         booking.setCancellationReason(request.getReason());
-
-        // Free up the car when booking is cancelled
         booking.getCar().setAvailable(true);
         carRepository.save(booking.getCar());
 
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        emailService.sendBookingCancellation(saved);
+        return toResponse(saved);
     }
 
     // ===== ADMIN =====
@@ -125,30 +121,32 @@ public class BookingService {
     }
 
     @Transactional
-    public BookingResponse updateBookingStatus(Long bookingId,
-                                               Booking.BookingStatus newStatus) {
+    public BookingResponse updateBookingStatus(Long bookingId, Booking.BookingStatus newStatus) {
         Booking booking = findByIdOrThrow(bookingId);
         validateStatusTransition(booking.getStatus(), newStatus);
         booking.setStatus(newStatus);
 
-        // When admin confirms a booking, car stays unavailable
-        // When admin cancels, free the car
         if (newStatus == Booking.BookingStatus.CANCELLED) {
             booking.getCar().setAvailable(true);
             carRepository.save(booking.getCar());
         }
 
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        if (newStatus == Booking.BookingStatus.CONFIRMED) {
+            emailService.sendBookingConfirmation(saved);
+        } else if (newStatus == Booking.BookingStatus.CANCELLED) {
+            emailService.sendBookingCancellation(saved);
+        }
+
+        return toResponse(saved);
     }
 
-    // ===== PRIVATE HELPERS =====
+    // ===== HELPERS =====
 
     private void validateBookingDates(LocalDate startDate, LocalDate endDate) {
         if (!endDate.isAfter(startDate)) {
             throw new IllegalArgumentException("End date must be after start date");
-        }
-        if (ChronoUnit.DAYS.between(startDate, endDate) < 1) {
-            throw new IllegalArgumentException("Minimum booking duration is 1 day");
         }
     }
 
@@ -162,10 +160,9 @@ public class BookingService {
             case ACTIVE -> next == Booking.BookingStatus.COMPLETED;
             default -> false;
         };
-
         if (!valid) {
             throw new IllegalStateException(
-                    "Invalid status transition: " + current + " → " + next);
+                    "Invalid status transition: " + current + " -> " + next);
         }
     }
 
@@ -182,16 +179,12 @@ public class BookingService {
 
     public BookingResponse toResponse(Booking booking) {
         Car car = booking.getCar();
-
         String primaryImageUrl = car.getImages().stream()
-                .filter(CarImage::isPrimary)
-                .map(CarImage::getImageUrl)
+                .filter(CarImage::isPrimary).map(CarImage::getImageUrl)
                 .findFirst()
-                .orElse(car.getImages().isEmpty() ? null
-                        : car.getImages().get(0).getImageUrl());
+                .orElse(car.getImages().isEmpty() ? null : car.getImages().get(0).getImageUrl());
 
-        long totalDays = ChronoUnit.DAYS.between(
-                booking.getStartDate(), booking.getEndDate());
+        long totalDays = ChronoUnit.DAYS.between(booking.getStartDate(), booking.getEndDate());
 
         return BookingResponse.builder()
                 .id(booking.getId())
@@ -202,8 +195,7 @@ public class BookingService {
                 .status(booking.getStatus())
                 .cancellationReason(booking.getCancellationReason())
                 .userId(booking.getUser().getId())
-                .userFullName(booking.getUser().getFirstName()
-                        + " " + booking.getUser().getLastName())
+                .userFullName(booking.getUser().getFirstName() + " " + booking.getUser().getLastName())
                 .userEmail(booking.getUser().getEmail())
                 .carId(car.getId())
                 .carModel(car.getModel())
