@@ -7,6 +7,7 @@ import com.ayush.car_rental_system.auth.dto.RegisterRequest;
 import com.ayush.car_rental_system.auth.entity.RefreshToken;
 import com.ayush.car_rental_system.common.exception.DuplicateResourceException;
 import com.ayush.car_rental_system.common.exception.ResourceNotFoundException;
+import com.ayush.car_rental_system.notification.service.EmailService;
 import com.ayush.car_rental_system.user.entity.Role;
 import com.ayush.car_rental_system.user.entity.User;
 import com.ayush.car_rental_system.user.repository.RoleRepository;
@@ -33,6 +34,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final CustomUserDetailsService userDetailsService;
+    private final EmailService emailService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -52,6 +54,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
         return buildAuthResponse(user);
     }
 

@@ -15,4 +15,8 @@ public interface CarRepository extends JpaRepository<Car, Long>,
 
     boolean existsByModelIgnoreCaseAndBrandIdAndYearAndIdNot(
             String model, Long brandId, Integer year, Long id);
+
+    // ===== DASHBOARD =====
+    long countByIsAvailableTrueAndIsActiveTrue();
+    long countByIsAvailableFalseAndIsActiveTrue();
 }

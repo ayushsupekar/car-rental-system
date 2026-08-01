@@ -3,7 +3,7 @@
 A production-ready full-stack Car Rental Web Application built with Spring Boot 3 + React.
 
 ## Tech Stack
-
+________________________________________________________
 | Layer      | Technology                              |
 |------------|-----------------------------------------|
 | Backend    | Java 21, Spring Boot 3.4.5, Maven       |
@@ -13,7 +13,7 @@ A production-ready full-stack Car Rental Web Application built with Spring Boot 
 | Docs       | OpenAPI 3 / Swagger UI                  |
 | Images     | Cloudinary                              |
 | Deployment | Backend → Render, Frontend → Vercel     |
-
+________________________________________________________
 ## Getting Started
 
 ### Prerequisites
