@@ -6,7 +6,7 @@ A production-ready full-stack Car Rental Web Application built with Spring Boot 
 ________________________________________________________
 | Layer      | Technology                              |
 |------------|-----------------------------------------|
-| Backend    | Java 21, Spring Boot 3.4.5, Maven       |
+| Backend    | Java 25, Spring Boot 3.4.5, Maven       |
 | Security   | Spring Security, JWT, Refresh Tokens    |
 | Database   | MySQL 8, Spring Data JPA, Hibernate     |
 | Frontend   | React, Vite, Tailwind CSS, Redux Toolkit|
@@ -17,7 +17,7 @@ ________________________________________________________
 ## Getting Started
 
 ### Prerequisites
-- Java 21
+- Java 25
 - Maven 3.9+
 - MySQL 8
 - Node.js 20+
