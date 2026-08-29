@@ -32,7 +32,7 @@ cd car-rental-system
 # 2. Create your local secrets file
 cp src/main/resources/application-local.properties.example \
    src/main/resources/application-local.properties
-# Edit application-local.properties with your DB password and JWT secret
+# Set the environment variables referenced by application-local.properties
 
 # 3. Run the application
 mvn spring-boot:run
