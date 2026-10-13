@@ -27,7 +27,7 @@ services:
   - type: web
     name: car-rental-frontend
     runtime: static
-    rootDir: car-rental-system/frontend
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
