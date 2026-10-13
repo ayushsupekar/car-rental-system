@@ -3,7 +3,6 @@ services:
   - type: web
     name: car-rental-backend
     runtime: docker
-    rootDir: car-rental-system
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api-docs
     envVars:
