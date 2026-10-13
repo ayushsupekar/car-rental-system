@@ -7,7 +7,8 @@ target/
 # ===== SECRETS — NEVER COMMIT THESE =====
 *.env
 .env
-.env.*
+.env.local
+.env.*.local
 application-local.properties
 application-secrets.properties
 
