@@ -40,13 +40,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // Monthly revenue — returns [yearMonth, revenue]
     @Query("""
-            SELECT CONCAT(YEAR(p.paidAt), '-', LPAD(CAST(MONTH(p.paidAt) AS string), 2, '0')),
+            SELECT FUNCTION('TO_CHAR', p.paidAt, 'YYYY-MM'),
                    SUM(p.amount)
             FROM Payment p
             WHERE p.status = 'SUCCESS'
             AND p.paidAt >= :since
-             GROUP BY CONCAT(YEAR(p.paidAt), '-', LPAD(CAST(MONTH(p.paidAt) AS string), 2, '0'))
-             ORDER BY CONCAT(YEAR(p.paidAt), '-', LPAD(CAST(MONTH(p.paidAt) AS string), 2, '0'))
+            GROUP BY FUNCTION('TO_CHAR', p.paidAt, 'YYYY-MM')
+            ORDER BY FUNCTION('TO_CHAR', p.paidAt, 'YYYY-MM')
             """)
     List<Object[]> findMonthlyRevenue(@Param("since") LocalDateTime since);
 }

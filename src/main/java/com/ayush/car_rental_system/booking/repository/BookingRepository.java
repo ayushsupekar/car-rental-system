@@ -50,13 +50,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // Monthly booking counts — returns [yearMonth, total, cancelled]
     @Query("""
-            SELECT CONCAT(YEAR(b.createdAt), '-', LPAD(CAST(MONTH(b.createdAt) AS string), 2, '0')),
+            SELECT FUNCTION('TO_CHAR', b.createdAt, 'YYYY-MM'),
                    COUNT(b),
-                   SUM(CASE WHEN b.status = 'CANCELLED' THEN 1L ELSE 0L END)
+                   SUM(CASE WHEN b.status = com.ayush.car_rental_system.booking.entity.Booking.BookingStatus.CANCELLED THEN 1L ELSE 0L END)
             FROM Booking b
             WHERE b.createdAt >= :since
-            GROUP BY CONCAT(YEAR(b.createdAt), '-', LPAD(CAST(MONTH(b.createdAt) AS string), 2, '0'))
-            ORDER BY CONCAT(YEAR(b.createdAt), '-', LPAD(CAST(MONTH(b.createdAt) AS string), 2, '0'))
+            GROUP BY FUNCTION('TO_CHAR', b.createdAt, 'YYYY-MM')
+            ORDER BY FUNCTION('TO_CHAR', b.createdAt, 'YYYY-MM')
             """)
     List<Object[]> findMonthlyBookingStats(@Param("since") LocalDateTime since);
 

@@ -9,7 +9,6 @@ target/
 .env
 .env.*
 application-local.properties
-application-prod.properties
 application-secrets.properties
 
 # ===== LOGS =====
