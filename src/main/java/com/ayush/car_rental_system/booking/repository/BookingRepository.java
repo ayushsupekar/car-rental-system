@@ -1,16 +1,17 @@
 package com.ayush.car_rental_system.booking.repository;
 
-import com.ayush.car_rental_system.booking.entity.Booking;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.ayush.car_rental_system.booking.entity.Booking;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
@@ -54,8 +55,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    SUM(CASE WHEN b.status = 'CANCELLED' THEN 1L ELSE 0L END)
             FROM Booking b
             WHERE b.createdAt >= :since
-            GROUP BY YEAR(b.createdAt), MONTH(b.createdAt)
-            ORDER BY YEAR(b.createdAt), MONTH(b.createdAt)
+            GROUP BY CONCAT(YEAR(b.createdAt), '-', LPAD(CAST(MONTH(b.createdAt) AS string), 2, '0'))
+            ORDER BY CONCAT(YEAR(b.createdAt), '-', LPAD(CAST(MONTH(b.createdAt) AS string), 2, '0'))
             """)
     List<Object[]> findMonthlyBookingStats(@Param("since") LocalDateTime since);
 

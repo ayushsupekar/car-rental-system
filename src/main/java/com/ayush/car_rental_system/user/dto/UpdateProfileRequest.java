@@ -18,6 +18,6 @@ public class UpdateProfileRequest {
     @Size(max = 50, message = "Last name must not exceed 50 characters")
     private String lastName;
 
-    @Pattern(regexp = "^[+]?[0-9]{7,15}$", message = "Invalid phone number")
+    @Pattern(regexp = "^$|^[+]?[0-9]{7,15}$", message = "Invalid phone number")
     private String phone;
 }

@@ -56,3 +56,6 @@ public class AdminCarImageController {
         return ResponseEntity.ok(ApiResponse.success("Primary image updated", response));
     }
 }
+
+
+

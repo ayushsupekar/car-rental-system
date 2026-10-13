@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -48,5 +49,14 @@ public class UserController {
             @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+    }
+
+    @PostMapping(value = "/me/profile-image", consumes = "multipart/form-data")
+    @Operation(summary = "Upload profile image")
+    public ResponseEntity<ApiResponse<UserResponse>> uploadProfileImage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.success("Profile image updated",
+                userService.updateProfileImage(userDetails.getUsername(), file)));
     }
 }

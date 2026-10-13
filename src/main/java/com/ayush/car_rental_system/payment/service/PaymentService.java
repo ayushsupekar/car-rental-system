@@ -174,6 +174,9 @@ public class PaymentService {
                 .carModel(booking.getCar().getModel())
                 .brandName(booking.getCar().getBrand().getName())
                 .totalDays(totalDays)
+                .userFirstName(booking.getUser().getFirstName())
+                .userLastName(booking.getUser().getLastName())
+                .userEmail(booking.getUser().getEmail())
                 .createdAt(payment.getCreatedAt())
                 .build();
     }

@@ -23,5 +23,10 @@ public class PaymentResponse {
     private String brandName;
     private Integer totalDays;
 
+    // User summary
+    private String userFirstName;
+    private String userLastName;
+    private String userEmail;
+
     private LocalDateTime createdAt;
 }

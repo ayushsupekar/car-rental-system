@@ -1,16 +1,17 @@
 package com.ayush.car_rental_system.payment.repository;
 
-import com.ayush.car_rental_system.payment.entity.Payment;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.ayush.car_rental_system.payment.entity.Payment;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
@@ -44,8 +45,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             FROM Payment p
             WHERE p.status = 'SUCCESS'
             AND p.paidAt >= :since
-            GROUP BY YEAR(p.paidAt), MONTH(p.paidAt)
-            ORDER BY YEAR(p.paidAt), MONTH(p.paidAt)
+             GROUP BY CONCAT(YEAR(p.paidAt), '-', LPAD(CAST(MONTH(p.paidAt) AS string), 2, '0'))
+             ORDER BY CONCAT(YEAR(p.paidAt), '-', LPAD(CAST(MONTH(p.paidAt) AS string), 2, '0'))
             """)
     List<Object[]> findMonthlyRevenue(@Param("since") LocalDateTime since);
 }

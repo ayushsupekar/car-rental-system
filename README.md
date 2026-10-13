@@ -42,7 +42,7 @@ mvn spring-boot:run
 Once running, visit: `http://localhost:8080/swagger-ui.html`
 
 ## Branch Strategy
-
+--------------------------------------------------
 | Branch      | Purpose                          |
 |-------------|----------------------------------|
 | `main`      | Production-ready code only       |
@@ -50,7 +50,7 @@ Once running, visit: `http://localhost:8080/swagger-ui.html`
 | `feature/*` | New features (e.g. feature/auth) |
 | `fix/*`     | Bug fixes                        |
 | `release/*` | Release preparation              |
-
+--------------------------------------------------
 ## Commit Convention
 
 ```
