@@ -87,7 +87,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // In production, replace * with your Vercel frontend URL
-        config.setAllowedOriginPatterns(List.of("http://localhost:5173", "https://*.vercel.app"));
+        config.setAllowedOriginPatterns(List.of("http://localhost:5173", "https://*.vercel.app", "https://*.onrender.com"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
